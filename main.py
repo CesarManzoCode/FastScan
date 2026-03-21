@@ -103,28 +103,34 @@ def print_resultados(scanner, ip, tiempo_total):
     
     print(f"\n{'='*60}")
 
-def escaneo_guardar_resultados(ip, archivo_salida=None):
+def escaneo_guardar_resultados(ip, archivo_salida=None, argumentos="-sS -sV -sC -O -T4 -p-"):
     """
     Realiza escaneo y opcionalmente guarda los resultados en archivo
     """
-    scanner = escaneo_completo(ip)
-    
+    scanner = escaneo_completo(ip, argumentos)
+
     if archivo_salida:
         try:
             with open(archivo_salida, 'w', encoding='utf-8') as f:
                 f.write(f"Resultados del escaneo a {ip}\n")
                 f.write(f"Fecha: {datetime.now()}\n")
                 f.write(f"{'='*60}\n\n")
-                
+
                 if ip in scanner.all_hosts():
                     f.write(f"Estado: {scanner[ip].state()}\n\n")
-                    
+
                     if 'tcp' in scanner[ip]:
                         f.write("Puertos abiertos:\n")
-                        for puerto in scanner[ip]['tcp']:
-                            if scanner[ip]['tcp'][puerto]['state'] == 'open':
-                                f.write(f"  {puerto}: {scanner[ip]['tcp'][puerto]['name']}\n")
-                
+                        for puerto in sorted(scanner[ip]['tcp']):
+                            info = scanner[ip]['tcp'][puerto]
+                            if info['state'] == 'open':
+                                nombre = info.get('name', 'desconocido')
+                                product = info.get('product', '')
+                                version = info.get('version', '')
+                                extrainfo = info.get('extrainfo', '')
+                                version_completa = f"{product} {version} {extrainfo}".strip() or "No detectada"
+                                f.write(f"  {puerto}: {nombre} - {version_completa}\n")
+
             print(f"\nResultados guardados en: {archivo_salida}")
         except Exception as e:
             print(f"Error al guardar archivo: {e}")
